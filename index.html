@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+
+<style id="webmakerstyle">
+
+</style>
+</head>
+<body>
+<canvas id='localCanvasSource'></canvas>
+<section id='video-container' style="width: 400px; height: 400px"></section>
+
+
+<script src="https://cdn.jsdelivr.net/npm/fm.liveswitch@1.6.3-13261/fm.liveswitch.js"></script>
+<script>
+let canvas = document.getElementById('localCanvasSource');
+const canvasFrameRate = 3;
+
+if (!canvas) {
+	canvas = document.createElement('canvas');
+    canvas.id = 'localCanvasSource';
+    canvas.style.position = 'absolute';
+    document.body.appendChild(canvas);
+    // Load a static image.
+    var image = new Image();
+    image.onload = function() {
+        // Resize the canvas to match the image size.
+        canvas.width = image.width;
+        canvas.height = image.height;
+        canvas.style.left = '-' + image.width + 'px';
+        canvas.style.top = '-' + image.height + 'px';
+        // Draw the initial image.
+        var context = canvas.getContext('2d');
+        context.drawImage(image, 0, 0, image.width, image.height, 0, 0, canvas.width, canvas.height);
+        // Refresh the image on a regular interval.
+        window.setInterval(function() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(image, 0, 0, image.width, image.height, 0, 0, canvas.width, canvas.height);
+        }, 1000.0 / canvasFrameRate);
+    };
+    image.src = 'https://v1.liveswitch.fm/images/static.jpg';
+}
+
+const applicationId = 'live-switch-mcu-test';
+const userId = 'gaurav.sharma';
+const deviceId = 'my-device2';
+const channelId = 'my-first-channe;';
+
+const client = new fm.liveswitch.Client('http://ec2-13-127-65-239.ap-south-1.compute.amazonaws.com:8080/sync', applicationId, userId, deviceId, null, ['role1', 'role2']);
+
+const sharedSecret = '82bfb27b882c46b2bd2c5605abfb4085274c49c5a9c3458d8086849cddca38ce';
+
+//register a user first
+const registerToken = fm.liveswitch.Token.generateClientRegisterToken(
+	applicationId,
+	client.getUserId(),
+	client.getDeviceId(),
+	client.getId(),
+	client.getRoles(),
+	[],
+	sharedSecret,
+);
+
+console.log(registerToken);
+
+client.register(registerToken).then(function (channels) {
+	console.log('Registered successfully!!');
+	// handler to join a new channel
+	const token = fm.liveswitch.Token.generateClientJoinToken(
+        applicationId,
+        client.getUserId(),
+        client.getDeviceId(),
+        client.getId(),
+        new fm.liveswitch.ChannelClaim(channelId),
+        sharedSecret,
+    );
+	
+	// console.log(token);
+
+    client.join(channelId, token).then((channel) => {
+        console.log('Successfully joined a channel');
+		
+		
+		// handle the media implementation here
+		const audio = true;
+		// const video = true;
+		// const video = {
+		// 	width: 320,
+		// 	height: 240,
+		// 	frameRate: 30
+		// };
+		
+		// handle the canvas
+		var video = true;
+		// instance to capture the local media
+		const localMedia = new fm.liveswitch.LocalMedia(audio, video);
+		// create instance to capture the remote media
+		const remoteMedia = new fm.liveswitch.RemoteMedia();
+		const audioStream = new fm.liveswitch.AudioStream(localMedia, remoteMedia);
+		const videoStream = new fm.liveswitch.VideoStream(localMedia, remoteMedia);
+		
+		const mcuConnection = channel.createMcuConnection(audioStream, videoStream);
+		
+		const layoutManager = new fm.liveswitch.DomLayoutManager(document.getElementById('video-container'));
+		
+		
+		localMedia.start().then((lm) => {
+			console.log('started recording');
+			// render the captured video into the container
+			layoutManager.setLocalView(localMedia.getView());
+			
+			layoutManager.addRemoteView(remoteMedia.getId(), remoteMedia.getView());
+			mcuConnection.setIceServers([
+				new fm.liveswitch.IceServer('stun:turn.frozenmountain.com:3478'),
+                new fm.liveswitch.IceServer('turn:turn.frozenmountain.com:80', 'test', 'pa55w0rd!'),
+                new fm.liveswitch.IceServer('turns:turn.frozenmountain.com:443', 'test', 'pa55w0rd!')
+			]);
+			try {
+				mcuConnection.open()
+					.then(result => console.log('Mixed connection established'))
+				.fail(err => console.log('MCU Open connection Error', err.message));
+			} catch (err) {
+				console.log(err.message);
+			}
+			// layoutManager.unsetLocalView();
+		}).fail(err => console.log('Some syntax error: ',err.message));
+		// localMedia.start().then(lm => console.log(lm)).catch(err => console.log(err.message));
+    }).fail(err => console.log('Failed while joining a channel', err));
+}).fail(err => console.log(err));
+
+//# sourceURL=userscript.js
+</script>
+</body>
+</html>
