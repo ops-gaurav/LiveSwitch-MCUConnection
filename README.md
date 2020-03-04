@@ -11,7 +11,8 @@ The build when run on different devices, automatically represents the new user o
 it easier to test across devices for augmenting multiple users.
 
 Steps
-- Enter a common channel name on each device to connect on a conference.
+- Open `interface.html` file in chrome or firefox.
+- Enter a common channel name on each device to connect in a common channel.
 - Click join to connect.
 
 > Note: The solution is tested for conference of 4 people in parallel. This is just the PoC implementaion. The production implementation is subjected to more features with R&D on research and scalability
