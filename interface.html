@@ -25,9 +25,9 @@
 					execution.
 				</section>
 				<p>Connection status: <bold id='connection-status'>New</bold></p>
-				<input class='form-control' type='text' placeholder='Enter name of channel to join' />
+				<input class='form-control' id='channel-name' type='text' placeholder='Enter name of channel to join' />
 				<br />
-				<button id='connect-button' class='btn btn-default btn-sm'>Join</button>
+				<button id='connect-button' style='display: none' class='btn btn-default btn-sm'>Join</button>
 			</section>
 			<section class='col-md-4'>
 				<div class="alert alert-danger" id='danger-container' style='display: none'>
@@ -38,6 +38,11 @@
 					<strong>Success!</strong>
 					<p id='success-message'></p>
 				</div>
+			</section>
+		</section>
+		<section class='row'>
+			<section class='col-md-12' id='video-container' style='width: 500px;height: 500px;'>
+
 			</section>
 		</section>
 	</section>
@@ -60,7 +65,10 @@
 	<script>
 		setTimeout(() => {
 			const app = new App();
-			app.connectButton.addEventListener('click', (e) => app.connect());
+			app.connect();
+			app.connectButton.addEventListener('click', (e) => {
+				app.joinChannel(app.channelTextField.value);
+			});
 		}, 2000);
 	</script>
 </body>
